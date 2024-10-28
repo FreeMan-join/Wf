@@ -1,10 +1,25 @@
-from flask import Flask, render_template, request, redirect, url_for
 import os
+import json
+from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = "static/uploads"
+DATA_FILE = "books.json"
 
-books = []
+
+def load_books():
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "r") as file:
+            return json.load(file)
+    return []
+
+
+def save_books(books):
+    with open(DATA_FILE, "w") as file:
+        json.dump(books, file)
+
+
+books = load_books()
 
 
 @app.route("/")
@@ -22,6 +37,7 @@ def add_book():
             photo_path = os.path.join(app.config["UPLOAD_FOLDER"], photo.filename)
             photo.save(photo_path)
             books.append({"title": title, "author": author, "photo": photo.filename})
+            save_books(books)
         return redirect(url_for("home"))
     return render_template("add_book.html")
 
@@ -30,6 +46,7 @@ def add_book():
 def delete_book(book_id):
     if 0 <= book_id < len(books):
         del books[book_id]
+        save_books(books)
     return redirect(url_for("home"))
 
 
