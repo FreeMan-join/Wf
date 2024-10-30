@@ -1,10 +1,12 @@
 import os
 import json
 from flask import Flask, render_template, request, redirect, url_for
+from PIL import Image
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = "static/uploads"
 DATA_FILE = "books.json"
+IMAGE_SIZE = (270, 180)  # Set the desired image size
 
 
 def load_books():
@@ -24,7 +26,8 @@ books = load_books()
 
 @app.route("/")
 def home():
-    return render_template("index.html", books=books)
+    sorted_books = sorted(books, key=lambda x: x["title"])
+    return render_template("index.html", books=sorted_books)
 
 
 @app.route("/add", methods=["GET", "POST"])
@@ -35,7 +38,9 @@ def add_book():
         photo = request.files["photo"]
         if photo:
             photo_path = os.path.join(app.config["UPLOAD_FOLDER"], photo.filename)
-            photo.save(photo_path)
+            image = Image.open(photo)
+            image = image.resize(IMAGE_SIZE)
+            image.save(photo_path)
             books.append({"title": title, "author": author, "photo": photo.filename})
             save_books(books)
         return redirect(url_for("home"))
